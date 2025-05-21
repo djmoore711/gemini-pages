@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Guide: Dual Dash Cam Night Vision with AI Assist (No VIOFO)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - Section 1 (Why Night Vision): Text summary. Goal: Context. Method: HTML. Interaction: None. Justification: Sets the stage.
+        - Section 2 (Core Technologies): Text summaries in tabs. Table 1 (HTML). Goal: Explain tech. Method: HTML, JS for tabs. Interaction: Tab selection. Justification: Organizes complex info. Library: None.
+        - Section 3 (Top Dash Cams): Interactive cards for models, HTML Table 2. Chart.js bar chart for price comparison. **New: AI Query in Modal.** Goal: Compare products, allow deeper AI-assisted inquiry. Method: HTML, JS for cards & modal, Gemini API. Interaction: Card click, AI query submission. Justification: Easy product exploration, dynamic info retrieval. Library: Chart.js, Gemini API (fetch). VIOFO products removed.
+        - Section 4 (Optimizing Clarity): Text in tabs. Goal: Provide solutions. Method: HTML, JS for tabs. Interaction: Tab selection. Justification: Addresses common issues. Library: None.
+        - Section 5 (Resolution/FPS): Text explanation, interactive buttons updating a text display with pros/cons. HTML Table 3. Goal: Explain trade-offs. Method: HTML, JS for interactive display. Interaction: Button clicks. Justification: Clarifies technical choices. Library: None.
+        - Section 6 (Advanced Features): Text in tabs. Goal: Detail extra features. Method: HTML, JS for tabs. Interaction: Tab selection. Justification: Covers secondary considerations. Library: None.
+        - Section 7 (Buyer's Checklist): HTML checklist, JS-powered recommendation helper based on priority selection. Goal: Aid decision. Method: HTML, JS. Interaction: Priority selection. Justification: Personalized guidance. Library: None. VIOFO examples removed/generalized.
+        - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .nav-link { transition: color 0.3s ease; }
+        .nav-link:hover { color: #14b8a6; /* teal-500 */ }
+        .nav-link.active { color: #0d9488; /* teal-600 */ font-weight: bold; border-bottom: 2px solid #0d9488; }
+        .chart-container { position: relative; width: 100%; max-width: 700px; margin-left: auto; margin-right: auto; height: 350px; max-height: 400px; }
+        @media (min-width: 768px) { .chart-container { height: 400px; } }
+        .card { background-color: #f3f4f6; /* gray-100 */ border: 1px solid #e5e7eb; /* gray-200 */ border-radius: 0.5rem; padding: 1rem; cursor: pointer; transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out; }
+        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); }
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.5); }
+        .modal-content { background-color: #ffffff; margin: 5% auto; padding: 20px; border: 1px solid #888; width: 90%; max-width: 700px; border-radius: 0.5rem; position: relative; }
+        .close-button { color: #aaa; float: right; font-size: 28px; font-weight: bold; cursor: pointer; }
+        .close-button:hover, .close-button:focus { color: black; text-decoration: none; }
+        .priority-btn { background-color: #52525b; /* zinc-600 */ color: white; }
+        .priority-btn:hover { background-color: #3f3f46; /* zinc-700 */ }
+        .priority-btn.selected { background-color: #14b8a6; /* teal-500 */ }
+        h2 { font-size: 1.75rem; font-weight: 600; margin-bottom: 1rem; color: #374151; /* gray-700 */ }
+        h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1rem; margin-bottom: 0.5rem; color: #4b5563; /* gray-600 */ }
+        table { width: 100%; border-collapse: collapse; margin-top: 1rem; margin-bottom: 1rem; }
+        th, td { border: 1px solid #d1d5db; /* gray-300 */ padding: 0.75rem; text-align: left; }
+        th { background-color: #f9fafb; /* gray-50 */ font-weight: 600; color: #374151; /* gray-700 */ }
+        .bg-warm-neutral { background-color: #fdfbf8; }
+        .text-accent { color: #0d9488; /* teal-600 */ }
+        .border-accent { border-color: #0d9488; /* teal-600 */ }
+        .button-primary { background-color: #0d9488; /* teal-600 */ color: white; padding: 0.5rem 1rem; border-radius: 0.375rem; transition: background-color 0.3s ease; }
+        .button-primary:hover { background-color: #0f766e; /* teal-700 */ }
+        .tab-button { background-color: #e5e7eb; /* gray-200 */ color: #374151; /* gray-700 */ }
+        .tab-button.active { background-color: #0d9488; /* teal-600 */ color: white; }
+        .ai-query-container { margin-top: 1.5rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; /* gray-200 */ }
+        .ai-response { margin-top: 0.75rem; padding: 0.75rem; background-color: #f9fafb; /* gray-50 */ border-radius: 0.375rem; border: 1px solid #e5e7eb; min-height: 50px; white-space: pre-wrap; }
+    </style>
+</head>
+<body class="bg-warm-neutral text-gray-800 antialiased">
+
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex-shrink-0">
+                    <h1 class="text-2xl font-bold text-accent">Night Vision Dash Cams</h1>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#introduction" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Intro</a>
+                        <a href="#technologies" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Tech</a>
+                        <a href="#top-models" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Models</a>
+                        <a href="#clarity-issues" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Clarity</a>
+                        <a href="#res-fps" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Res/FPS</a>
+                        <a href="#extra-features" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Extras</a>
+                        <a href="#recommendations" class="nav-link px-3 py-2 rounded-md text-sm font-medium">Guide</a>
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        <section id="introduction" class="my-8 scroll-mt-20">
+            <h2><span class="text-accent">🌙</span> Illuminating the Dark: Why Night Vision Matters</h2>
+            <p class="text-lg leading-relaxed mb-4">The true test of a dash cam's utility comes when daylight fades. Nighttime driving presents unique challenges with increased risks and reduced visibility. This interactive guide explores dual dash cams excelling in low-light conditions, providing crucial insights for clear, reliable recordings. Superior night vision is not just a feature; it's fundamental for safety, evidence, and peace of mind, extending to parking surveillance against theft or vandalism.</p>
+            <p class="leading-relaxed">A dash cam failing to capture critical details like license plates or actions during a nighttime event severely undermines its value. Furthermore, many rely on dash cams for vehicle security while parked, a time of heightened vulnerability. Effective night vision, especially with smart parking modes, is key to comprehensive security.</p>
+        </section>
+
+        <section id="technologies" class="my-12 scroll-mt-20">
+            <h2><span class="text-accent">💡</span> Decoding Night Vision: Key Technologies</h2>
+            <p class="text-lg leading-relaxed mb-6">A dash cam's night vision prowess isn't magic; it's the result of several advanced technologies working in concert. Understanding these core components—from image sensors to dynamic range enhancement—is key to choosing a device that truly illuminates the night. This section breaks down the essential tech that determines the clarity and reliability of your nighttime footage.</p>
+            <div class="mb-4 border-b border-gray-300">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="tab-button technology-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm active" data-target="tech-sensors">Image Sensors</button>
+                    <button class="tab-button technology-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm" data-target="tech-hdr-wdr">HDR/WDR</button>
+                    <button class="tab-button technology-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm" data-target="tech-aperture">Aperture</button>
+                    <button class="tab-button technology-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm" data-target="tech-ir">Infrared (IR)</button>
+                </nav>
+            </div>
+            <div>
+                <div id="tech-sensors" class="tab-content technology-tab-content active">
+                    <h3>Image Sensors: The Eyes of the Camera</h3>
+                    <p>The image sensor is paramount for low-light performance. Sony's STARVIS and particularly <strong>STARVIS 2</strong> technology are benchmarks, offering enhanced low-light sensitivity, wider dynamic range, improved near-infrared (NIR) sensitivity, reduced noise, and lower power consumption. Larger pixel sizes and back-illumination also contribute to better light gathering. While Sony leads, other manufacturers like OmniVision also produce capable sensors. Most modern dash cams use CMOS sensors.</p>
+                </div>
+                <div id="tech-hdr-wdr" class="tab-content technology-tab-content">
+                    <h3>Dynamic Range Enhancement: HDR and WDR</h3>
+                    <p>Dynamic range is crucial for capturing details in scenes with high contrast (e.g., headlights against a dark road). <strong>Wide Dynamic Range (WDR)</strong> balances light/shadow by merging multiple exposures digitally. <strong>High Dynamic Range (HDR)</strong> is more advanced, often hardware-supported, combining frames at different exposures for superior detail, color, and noise reduction. Sony STARVIS 2 supports advanced HDR modes like DOL HDR and Clear HDR. HDR is generally preferred for extreme night contrast but can sometimes reduce max frame rate or cause motion blur.</p>
+                </div>
+                <div id="tech-aperture" class="tab-content technology-tab-content">
+                    <h3>Aperture Size (f-stop): Letting in the Light</h3>
+                    <p>A larger aperture (lower f-stop number, e.g., f/1.6) allows more light to reach the sensor, producing brighter, clearer images in low light with less noise. While it creates a shallower depth of field, for dash cams, maximizing light intake is the priority for night vision. An f/1.6 lens lets in more light than an f/2.8 lens.</p>
+                </div>
+                <div id="tech-ir" class="tab-content technology-tab-content">
+                    <h3>Infrared (IR) Capabilities: Seeing in Pitch Black</h3>
+                    <p>IR dash cams use IR LEDs to illuminate a scene with light invisible to humans but detectable by the camera. This is primarily effective for <strong>interior-facing cameras</strong> (e.g., for rideshare drivers) and can see in total darkness over short distances. However, IR is unsuitable for external recording through windshields due to reflection glare. It's distinct from sensor-based "Super Night Vision" technologies that enhance low ambient light.</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto mt-6">
+                <h3>Table 1: Key Night Vision Technologies Overview</h3>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Technology</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Primary Benefit for Night Vision</th>
+                            <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Key Considerations/Limitations</th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">Image Sensor (Sony STARVIS 2)</td>
+                            <td class="px-6 py-4">Greatly increased light sensitivity, noise reduction, superior HDR</td>
+                            <td class="px-6 py-4">Premium cost, overall system synergy (ISP, lens) is crucial.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">High Dynamic Range (HDR)</td>
+                            <td class="px-6 py-4">Balances bright lights and dark shadows, enhances detail</td>
+                            <td class="px-6 py-4">Can reduce max frame rate; some types may cause motion blur.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">Wide Dynamic Range (WDR)</td>
+                            <td class="px-6 py-4">Balances varied lighting, reduces over/underexposure</td>
+                            <td class="px-6 py-4">Generally less effective than HDR in extreme night contrast.</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">Large Aperture (e.g., f/1.6-f/1.8)</td>
+                            <td class="px-6 py-4">Increased light intake for brighter images</td>
+                            <td class="px-6 py-4">Shallower depth of field (often acceptable).</td>
+                        </tr>
+                        <tr>
+                            <td class="px-6 py-4 whitespace-nowrap">Infrared (IR) LEDs</td>
+                            <td class="px-6 py-4">Illuminates in complete darkness (in-cabin/short-range)</td>
+                            <td class="px-6 py-4">Unsuitable for external recording through glass (reflection); B&W video.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="top-models" class="my-12 scroll-mt-20">
+            <h2><span class="text-accent">🏆</span> Leading the Pack: Top-Rated Dual Dash Cams</h2>
+            <p class="text-lg leading-relaxed mb-6">Navigating the dash cam market can be daunting. This section highlights specific brands and models consistently recognized for their excellent night vision performance. We'll look at the technologies they employ and what makes them stand out, helping you identify potential champions for your nighttime recording needs. Explore the cards below for details on each model and use the AI assistant for specific questions.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <div class="card model-card" data-model="thinkware_u3000">
+                    <h3 class="font-semibold text-xl mb-2">Thinkware U3000</h3>
+                    <p class="text-sm text-gray-600">Front STARVIS 2, Super Night Vision 4.0</p>
+                    <p class="text-lg font-bold text-accent mt-2">$500 - $550</p>
+                </div>
+                <div class="card model-card" data-model="blackvue_dr970x">
+                    <h3 class="font-semibold text-xl mb-2">BlackVue DR970X Plus/LTE</h3>
+                    <p class="text-sm text-gray-600">Front STARVIS 2, Cloud Features (No HDR)</p>
+                    <p class="text-lg font-bold text-accent mt-2">$400 - $541</p>
+                </div>
+                 <div class="card model-card" data-model="vantrue_n4_pro">
+                    <h3 class="font-semibold text-xl mb-2">Vantrue N4 Pro (3-CH)</h3>
+                    <p class="text-sm text-gray-600">Front STARVIS 2, 3-Channel Option</p>
+                    <p class="text-lg font-bold text-accent mt-2">&lt; $400</p>
+                </div>
+                <div class="card model-card" data-model="vantrue_s1_pro">
+                    <h3 class="font-semibold text-xl mb-2">Vantrue S1 Pro</h3>
+                    <p class="text-sm text-gray-600">Dual STARVIS, Good Value</p>
+                    <p class="text-lg font-bold text-accent mt-2">&lt; $200</p>
+                </div>
+            </div>
+
+            <div class="chart-container my-8">
+                <canvas id="priceComparisonChart"></canvas>
+            </div>
+            <p class="text-center text-sm text-gray-600 mb-8">Interactive Price Comparison of Select Models</p>
+
+            <div class="overflow-x-auto">
+                <h3>Table 2: Comparison of Top-Rated Dual Dash Cams for Night Vision</h3>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Model</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Front Sensor</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Rear Sensor</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Max Front Res/FPS</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Max Rear Res/FPS</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">HDR/WDR (F/R)</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Aperture (F/R)</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Key Night Features</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Thinkware U3000</td><td>Sony STARVIS 2 IMX678 (8.4MP)</td><td>Sony STARVIS IMX335 (5.14MP)</td><td>4K@30fps</td><td>2K@30fps</td><td>WDR/HDR (Both)</td><td>f/1.6 / f/1.8</td><td>SNV 4.0, Front STARVIS 2, Radar</td></tr>
+                        <tr><td>BlackVue DR970X Plus/LTE</td><td>Sony STARVIS 2 IMX678 (8MP)</td><td>Sony STARVIS (2.1MP)</td><td>4K@30fps</td><td>1080p@30fps</td><td>No HDR</td><td>f/1.7 / f/2.4</td><td>Front STARVIS 2, Wide Aperture (F)</td></tr>
+                        <tr><td>Vantrue N4 Pro (3-CH)</td><td>Sony STARVIS 2</td><td>Sony STARVIS</td><td>4K@30fps (F)</td><td>1080p@30fps (R/Int)</td><td>HDR (F)</td><td>Varies</td><td>STARVIS 2 (F), IR (Int)</td></tr>
+                        <tr><td>Vantrue S1 Pro</td><td>Sony STARVIS</td><td>Sony STARVIS</td><td>2.7K@30fps</td><td>2.7K@30fps</td><td>WDR/HDR</td><td>Varies</td><td>Dual STARVIS, Value NV</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section id="clarity-issues" class="my-12 scroll-mt-20">
+            <h2><span class="text-accent">🚧</span> Obstacles to Nighttime Clarity & Solutions</h2>
+            <p class="text-lg leading-relaxed mb-6">Even the most advanced dash cam can struggle if common issues aren't addressed. Glare, environmental factors, and incorrect settings can all degrade nighttime footage. This section identifies these obstacles and provides practical solutions to help you maximize your dash cam's performance when it's dark.</p>
+            <div class="mb-4 border-b border-gray-300">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="tab-button clarity-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm active" data-target="clarity-glare">Glare & Reflections</button>
+                    <button class="tab-button clarity-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm" data-target="clarity-environment">Environment & Maintenance</button>
+                    <button class="tab-button clarity-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm" data-target="clarity-settings">Settings & Processing</button>
+                </nav>
+            </div>
+            <div>
+                <div id="clarity-glare" class="tab-content clarity-tab-content active">
+                    <h3>Glare and Reflections</h3>
+                    <p>Headlights, streetlights, and dashboard reflections can obscure details. <strong>CPL filters</strong> reduce glare but are generally <strong>not recommended at night</strong> as they reduce light intake, potentially making footage darker. Proper camera positioning and effective HDR/WDR are better solutions for nighttime glare.</p>
+                </div>
+                <div id="clarity-environment" class="tab-content clarity-tab-content">
+                    <h3>Environmental and Maintenance Factors</h3>
+                    <p>A dirty windshield (inside/outside), smudged lens, rain, or fog significantly impair video quality. Regular cleaning of the lens and windshield is crucial. Rain guards and proper vehicle climate control (defogger) can also help.</p>
+                </div>
+                <div id="clarity-settings" class="tab-content clarity-tab-content">
+                    <h3>Camera Settings and Processing</h3>
+                    <p>Low resolution or bitrate settings diminish detail. High-quality dash cams feature sophisticated <strong>Image Signal Processing (ISP)</strong> to automatically optimize settings like exposure and noise reduction for night conditions. Users should select the highest supported resolution and a high bitrate.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="res-fps" class="my-12 scroll-mt-20">
+            <h2><span class="text-accent">⚙️</span> Resolution & Frame Rate: The Nighttime Balancing Act</h2>
+            <p class="text-lg leading-relaxed mb-6">Resolution and frame rate are key settings impacting nighttime footage, especially for license plate readability. Higher resolution (e.g., 4K) offers more detail, while higher frame rates (e.g., 60fps) provide smoother video and can reduce motion blur. However, there's a trade-off: higher frame rates mean less light per frame, potentially darkening images in very low light. Understanding this balance is crucial.</p>
+            <div class="bg-gray-100 p-6 rounded-lg shadow">
+                <h3 class="mb-3">Interactive Explainer: Resolution vs. Frame Rate</h3>
+                <p class="mb-4">Select an option to see its typical impact on nighttime recording:</p>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <button class="res-fps-btn button-primary" data-info="4k30fps">4K @ 30fps</button>
+                    <button class="res-fps-btn button-primary" data-info="2k60fps">2K @ 60fps</button>
+                    <button class="res-fps-btn button-primary" data-info="2k30fps">2K @ 30fps</button>
+                    <button class="res-fps-btn button-primary" data-info="1080p60fps">1080p @ 60fps</button>
+                </div>
+                <div id="res-fps-info" class="p-4 bg-white rounded border border-gray-300 min-h-[100px]">
+                    <p>Select an option above to learn more.</p>
+                </div>
+            </div>
+            <div class="overflow-x-auto mt-6">
+                <h3>Table 3: Resolution vs. Frame Rate for Nighttime License Plate Readability</h3>
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Scenario</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Potential for Detail</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Light Sensitivity (Per Frame)</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Motion Blur</th>
+                            <th class="px-4 py-2 text-left text-xs font-medium">Night Recommendation</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>4K @ 30fps</td><td>Highest</td><td>Better</td><td>Good</td><td>Often optimal if sensor/ISP are high quality.</td></tr>
+                        <tr><td>2K @ 60fps</td><td>High</td><td>Poorer</td><td>Better</td><td>Good if motion is extreme & light adequate.</td></tr>
+                        <tr><td>2K @ 30fps</td><td>High</td><td>Better</td><td>Good</td><td>Good balance if 4K unavailable/struggles.</td></tr>
+                        <tr><td>1080p @ 60fps</td><td>Moderate</td><td>Poorer</td><td>Better</td><td>Less detail, less light.</td></tr>
+                    </tbody>
+                </table>
+                <p class="mt-2 text-sm text-gray-600"><strong>Note:</strong> Video bitrate is also crucial. High resolution/FPS with low bitrate will result in poor quality.</p>
+            </div>
+        </section>
+
+        <section id="extra-features" class="my-12 scroll-mt-20">
+            <h2><span class="text-accent">🛡️</span> Beyond Driving: Enhancing Nighttime Security & Convenience</h2>
+            <p class="text-lg leading-relaxed mb-6">Modern dash cams offer features extending protection beyond driving incidents, crucial for nighttime security when parked. These include advanced parking modes, cloud connectivity for remote access and evidence backup, and reliable power sources like supercapacitors. These elements contribute significantly to overall safety and convenience.</p>
+            <div class="mb-4 border-b border-gray-300">
+                <nav class="flex flex-wrap -mb-px" aria-label="Tabs">
+                    <button class="tab-button extra-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm active" data-target="extra-parking">Advanced Parking Modes</button>
+                    <button class="tab-button extra-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm" data-target="extra-cloud">Cloud Connectivity</button>
+                    <button class="tab-button extra-tab-button whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm" data-target="extra-power">Power Source</button>
+                </nav>
+            </div>
+            <div>
+                <div id="extra-parking" class="tab-content extra-tab-content active">
+                    <h3>Advanced Parking Modes</h3>
+                    <p>Provide 24/7 protection against hit-and-runs or vandalism. Key features include motion/impact detection, buffered recording (capturing seconds before an event), time-lapse, energy-saving modes, and radar-based detection (e.g., Thinkware U3000). Effectiveness hinges on good night vision and often requires hardwiring.</p>
+                </div>
+                <div id="extra-cloud" class="tab-content extra-tab-content">
+                    <h3>Cloud Connectivity</h3>
+                    <p>Offers remote live view, event notifications, automatic event upload/backup to secure cloud storage (critical if camera/SD card is stolen/damaged), and remote playback. Requires a data connection (hotspot, Wi-Fi, built-in LTE) and may involve subscription fees. BlackVue is known for robust cloud features.</p>
+                </div>
+                <div id="extra-power" class="tab-content extra-tab-content">
+                    <h3>Power Source Reliability: Supercapacitors vs. Batteries</h3>
+                    <p><strong>Supercapacitors</strong> are preferred for their resilience to extreme temperatures, longer lifespan, and safety (low risk of overheating/leaking) – ideal for devices left in cars. They require hardwiring for parking mode. Lithium-ion batteries store more energy for standalone parking mode but are sensitive to temperature extremes and have shorter lifespans.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="recommendations" class="my-12 scroll-mt-20">
+            <h2><span class="text-accent">⭐</span> Expert Recommendations: Choosing Your Night Vision Champion</h2>
+            <p class="text-lg leading-relaxed mb-6">Selecting the ideal dual dash cam for night vision involves balancing technical specs, features, and your budget. The "best" choice is subjective and depends on your specific needs. This section provides a checklist and tailored recommendations to guide your decision-making process.</p>
+            
+            <h3>Key Considerations Checklist:</h3>
+            <ul class="list-disc list-inside space-y-2 mb-6 bg-gray-50 p-4 rounded-md">
+                <li><strong>Prioritize Sensor Quality (Front & Rear):</strong> Seek latest-gen sensors like Sony STARVIS 2 for both channels.</li>
+                <li><strong>Demand Effective HDR/WDR (Front & Rear):</strong> Essential for night dynamic range. Check real-world performance.</li>
+                <li><strong>Aim for Sufficient Resolution (4K Front Preferred):</strong> For license plate detail. 2K rear is a good target.</li>
+                <li><strong>Look for a Wide Aperture:</strong> Lower f-stop (e.g., f/1.6-f/1.8) means more light.</li>
+                <li><strong>Assess Parking Mode Capabilities:</strong> Buffered recording, reliable detection, radar if budget allows.</li>
+                <li><strong>Choose a Reliable Power Source:</strong> Supercapacitors are highly recommended.</li>
+                <li><strong>Be Cautious with CPL Filters at Night:</strong> Generally remove for night driving to maximize light.</li>
+                <li><strong>Consult Real-World Reviews & Footage:</strong> Check independent night samples for clarity, noise, plate readability.</li>
+                <li><strong>Define Your Budget:</strong> Top-tier night vision often costs more.</li>
+            </ul>
+
+            <h3 class="mt-8 mb-4">Find Your Match: Tailored Recommendations</h3>
+            <p class="mb-4">What's most important to you in a night vision dash cam?</p>
+            <div class="flex flex-wrap gap-3 mb-4">
+                <button class="priority-btn py-2 px-4 rounded-md text-sm" data-priority="ultimate_detail">Ultimate Night Vision Detail</button>
+                <button class="priority-btn py-2 px-4 rounded-md text-sm" data-priority="cloud_features">Cloud Features & Connectivity</button>
+                <button class="priority-btn py-2 px-4 rounded-md text-sm" data-priority="parking_surveillance">Advanced Parking Surveillance</button>
+                <button class="priority-btn py-2 px-4 rounded-md text-sm" data-priority="budget_conscious">Budget-Conscious Good NV</button>
+            </div>
+            <div id="recommendation-details" class="p-4 bg-white rounded border border-gray-300 min-h-[150px]">
+                <p>Select a priority above to see tailored recommendations.</p>
+            </div>
+
+            <h3 class="mt-8">Final Advice:</h3>
+            <p class="leading-relaxed">Proper installation (clean windshield, optimal camera position) and using high-quality, high-endurance microSD cards are crucial for optimal performance and reliability. The best dash cam integrates sensor tech, optics, processing, and settings effectively. Evaluate based on your unique needs to find your night vision champion.</p>
+        </section>
+    </main>
+
+    <div id="modelModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle" class="text-2xl font-bold mb-4 text-accent">Model Details</h2>
+            <div id="modalStaticBody"></div>
+            <div class="ai-query-container">
+                <h3 class="text-lg font-semibold mb-2 text-gray-700">Ask AI About This Model ✨</h3>
+                <textarea id="aiQueryInput" class="w-full p-2 border border-gray-300 rounded-md focus:ring-teal-500 focus:border-teal-500" rows="3" placeholder="e.g., How does its parking mode compare to others? What are common complaints?"></textarea>
+                <button id="askAIButton" class="mt-2 button-primary">Ask AI ✨</button>
+                <div id="aiResponse" class="ai-response">
+                    <p class="text-gray-500">AI response will appear here...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="text-center p-6 mt-12 border-t border-gray-300">
+        <p class="text-sm text-gray-600">&copy; <span id="currentYear"></span> Interactive Dash Cam Guide. Information based on the "Dual Dash Cam Night Vision" report. AI features powered by Gemini.</p>
+    </footer>
+
+    <script>
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+        let currentModelNameForAI = '';
+
+        function setupTabs(tabButtonClass, tabContentClass) {
+            const tabButtons = document.querySelectorAll('.' + tabButtonClass);
+            const tabContents = document.querySelectorAll('.' + tabContentClass);
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    tabButtons.forEach(btn => btn.classList.remove('active', 'border-accent', 'text-accent', 'bg-teal-600', 'text-white'));
+                    button.classList.add('active', 'border-accent', 'text-accent', 'bg-teal-600', 'text-white');
+                    
+                    tabContents.forEach(content => content.classList.remove('active'));
+                    const targetContent = document.getElementById(button.dataset.target);
+                    if (targetContent) {
+                        targetContent.classList.add('active');
+                    }
+                });
+            });
+        }
+
+        setupTabs('technology-tab-button', 'technology-tab-content');
+        setupTabs('clarity-tab-button', 'clarity-tab-content');
+        setupTabs('extra-tab-button', 'extra-tab-content');
+
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('section');
+
+        window.addEventListener('scroll', () => {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                if (pageYOffset >= sectionTop - 80) { 
+                    current = section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active', 'border-accent', 'text-accent');
+                if (link.getAttribute('href').substring(1) === current) {
+                    link.classList.add('active', 'border-accent', 'text-accent');
+                }
+            });
+        });
+        
+        navLinks.forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const headerOffset = 70; 
+                    const elementPosition = targetElement.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth"
+                    });
+                }
+            });
+        });
+
+        const modelData = {
+            thinkware_u3000: {
+                name: "Thinkware U3000",
+                price: "$500 - $550",
+                details: `
+                    <p><strong>Front Sensor:</strong> Sony STARVIS 2 IMX678 (8.4MP)</p>
+                    <p><strong>Rear Sensor:</strong> Sony STARVIS IMX335 (5.14MP)</p>
+                    <p><strong>Max Res/FPS (F/R):</strong> 4K@30fps / 2K@30fps</p>
+                    <p><strong>HDR/WDR:</strong> WDR/HDR (Both), Smart Auto-Exposure</p>
+                    <p><strong>Aperture (F/R):</strong> Typically f/1.6 / f/1.8</p>
+                    <p><strong>Key Night Features:</strong> Super Night Vision 4.0 leveraging STARVIS 2, advanced radar parking mode.</p>
+                    <p><strong>Performance:</strong> Lauded for 4K front/2K rear with SNV 4.0 significantly improving low-light clarity. Premium features and price.</p>
+                `
+            },
+            blackvue_dr970x: {
+                name: "BlackVue DR970X Plus / LTE",
+                price: "$400 - $541",
+                details: `
+                    <p><strong>Front Sensor:</strong> Sony STARVIS 2 IMX678 (8MP)</p>
+                    <p><strong>Rear Sensor:</strong> Sony STARVIS (approx. 2.1MP, Full HD)</p>
+                    <p><strong>Max Res/FPS (F/R):</strong> 4K@30fps / 1080p@30fps</p>
+                    <p><strong>HDR/WDR:</strong> No HDR (Notable limitation)</p>
+                    <p><strong>Aperture (F/R):</strong> f/1.7 (Front) / f/2.4 (approx. Rear)</p>
+                    <p><strong>Key Night Features:</strong> Front STARVIS 2 sensor, wider f/1.7 front aperture, advanced ISP, excellent cloud features.</p>
+                    <p><strong>Performance:</strong> Improved front camera night video and plate readability. Lack of HDR is a drawback vs. competitors. Strong on cloud functionality.</p>
+                `
+            },
+            vantrue_n4_pro: {
+                name: "Vantrue N4 Pro (3-Channel)",
+                price: "< $400",
+                details: `
+                    <p><strong>Front Sensor:</strong> Sony STARVIS 2</p>
+                    <p><strong>Rear/Interior Sensor:</strong> Sony STARVIS (example, varies)</p>
+                    <p><strong>Max Res/FPS (Front):</strong> 4K@30fps</p>
+                    <p><strong>HDR/WDR:</strong> HDR (Front)</p>
+                    <p><strong>Key Night Features:</strong> STARVIS 2 (Front), IR for interior camera, WDR/HDR.</p>
+                    <p><strong>Performance:</strong> Aims for clear nighttime footage with its front STARVIS 2 sensor. Offers 3-channel recording capability.</p>
+                `
+            },
+            vantrue_s1_pro: {
+                name: "Vantrue S1 Pro",
+                price: "< $200",
+                details: `
+                    <p><strong>Front Sensor:</strong> Sony STARVIS</p>
+                    <p><strong>Rear Sensor:</strong> Sony STARVIS</p>
+                    <p><strong>Max Res/FPS (F/R):</strong> 2.7K@30fps / 2.7K@30fps</p>
+                    <p><strong>HDR/WDR:</strong> WDR/HDR</p>
+                    <p><strong>Key Night Features:</strong> Dual STARVIS sensors, good value for night vision capabilities.</p>
+                    <p><strong>Performance:</strong> Noted for providing good night vision performance at a more accessible price point with its dual STARVIS setup.</p>
+                `
+            }
+        };
+
+        const modal = document.getElementById('modelModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalStaticBody = document.getElementById('modalStaticBody');
+        const aiQueryInput = document.getElementById('aiQueryInput');
+        const aiResponseDiv = document.getElementById('aiResponse');
+        const askAIButton = document.getElementById('askAIButton');
+        const modelCards = document.querySelectorAll('.model-card');
+
+        modelCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const modelKey = card.dataset.model;
+                const data = modelData[modelKey];
+                if (data) {
+                    currentModelNameForAI = data.name;
+                    modalTitle.textContent = data.name;
+                    modalStaticBody.innerHTML = `<p class="text-lg font-semibold text-accent mb-3">Typical Price: ${data.price}</p>${data.details}`;
+                    aiQueryInput.value = ''; 
+                    aiResponseDiv.innerHTML = '<p class="text-gray-500">AI response will appear here...</p>'; 
+                    modal.style.display = 'block';
+                }
+            });
+        });
+
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+        
+        askAIButton.addEventListener('click', async () => {
+            const userQuestion = aiQueryInput.value.trim();
+            if (!userQuestion) {
+                aiResponseDiv.innerHTML = '<p class="text-red-500">Please enter a question.</p>';
+                return;
+            }
+
+            aiResponseDiv.innerHTML = '<p class="text-gray-700 animate-pulse">✨ Thinking...</p>';
+            askAIButton.disabled = true;
+
+            const prompt = `You are a helpful assistant knowledgeable about dash cameras. Based on general knowledge, user reviews, and typical product specifications, please answer the following question about the "${currentModelNameForAI}" dash cam: "${userQuestion}"\n\nKeep your answer concise, informative, and directly relevant to the user's question about this specific dash cam model. If the information is highly specific and not generally known or found in common reviews (like exact internal component revisions not advertised), state that specific detail might require consulting the manufacturer directly.`;
+            
+            let chatHistory = [{ role: "user", parts: [{ text: prompt }] }];
+            const payload = { contents: chatHistory };
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error("API Error:", errorData);
+                    throw new Error(`API request failed with status ${response.status}: ${errorData?.error?.message || response.statusText}`);
+                }
+
+                const result = await response.json();
+                
+                if (result.candidates && result.candidates.length > 0 &&
+                    result.candidates[0].content && result.candidates[0].content.parts &&
+                    result.candidates[0].content.parts.length > 0) {
+                    const text = result.candidates[0].content.parts[0].text;
+                    aiResponseDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
+                } else {
+                    console.error("Unexpected API response structure:", result);
+                    aiResponseDiv.innerHTML = '<p class="text-red-500">Sorry, I could not get a response. The AI might be unavailable or the response was empty.</p>';
+                }
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                aiResponseDiv.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}. Please try again later.</p>`;
+            } finally {
+                askAIButton.disabled = false;
+            }
+        });
+
+
+        const priceChartCtx = document.getElementById('priceComparisonChart').getContext('2d');
+        const priceData = {
+            labels: ['Thinkware U3000', 'BlackVue DR970X', 'Vantrue N4 Pro', 'Vantrue S1 Pro'],
+            datasets: [{
+                label: 'Typical Price Range (USD)',
+                data: [ [500, 550], [400, 541], [300, 400], [150, 200] ],
+                backgroundColor: [ 'rgba(13, 148, 136, 0.6)', 'rgba(15, 118, 110, 0.6)', 'rgba(17, 94, 89, 0.6)', 'rgba(19, 78, 74, 0.6)' ],
+                borderColor: [ 'rgb(13, 148, 136)', 'rgb(15, 118, 110)', 'rgb(17, 94, 89)', 'rgb(19, 78, 74)' ],
+                borderWidth: 1, barPercentage: 0.7, categoryPercentage: 0.8, borderSkipped: false,
+            }]
+        };
+        new Chart(priceChartCtx, {
+            type: 'bar', data: priceData,
+            options: {
+                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                scales: { x: { beginAtZero: true, title: { display: true, text: 'Price (USD)' } },
+                    y: { ticks: { autoSkip: false, 
+                        callback: function(value) {
+                            const label = this.getLabelForValue(value);
+                            if (label.length > 20) { 
+                                const words = label.split(' '); let lines = ['']; let currentLine = 0;
+                                words.forEach(word => {
+                                    if ((lines[currentLine] + word).length > 16 && lines[currentLine] !== '') { currentLine++; lines[currentLine] = ''; }
+                                    lines[currentLine] += word + ' ';
+                                });
+                                return lines.map(line => line.trim());
+                            } return label;
+                        }
+                    }}
+                },
+                plugins: { legend: { display: false },
+                    tooltip: { callbacks: {
+                        label: function(context) {
+                            let label = context.dataset.label || ''; if (label) { label += ': '; }
+                            if (context.parsed.x !== null) {
+                                if (Array.isArray(context.raw) && context.raw.length === 2) { label += `$${context.raw[0]} - $${context.raw[1]}`; } 
+                                else { label += `$${context.parsed.x}`; }
+                            } return label;
+                        }
+                    }}
+                }
+            }
+        });
+        
+        const resFpsBtns = document.querySelectorAll('.res-fps-btn');
+        const resFpsInfoDiv = document.getElementById('res-fps-info');
+        const resFpsData = {
+            '4k30fps': "<strong>4K @ 30fps:</strong> Offers the highest detail for license plates. The 30fps allows more light capture per frame than 60fps, beneficial in dark conditions. Often optimal if sensor & ISP are high quality, prioritizing detail and light.",
+            '2k60fps': "<strong>2K @ 60fps:</strong> Balances smoother motion (better for fast-moving objects) with high detail. Best if motion is extreme and ambient light is adequate. However, less light per frame than 30fps is a concern in very dark scenes.",
+            '2k30fps': "<strong>2K @ 30fps:</strong> A good balance if 4K isn't available or if the 4K system struggles in low light. Offers good detail with better light capture per frame than 60fps.",
+            '1080p60fps': "<strong>1080p @ 60fps:</strong> Provides smoother motion but offers significantly less detail for license plates compared to 2K/4K. Also captures less light per frame than 30fps, which can be detrimental at night."
+        };
+        resFpsBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                resFpsBtns.forEach(b => b.classList.remove('bg-teal-500', 'ring-2', 'ring-teal-700'));
+                btn.classList.add('bg-teal-500', 'ring-2', 'ring-teal-700');
+                resFpsInfoDiv.innerHTML = resFpsData[btn.dataset.info] || "<p>Select an option to learn more.</p>";
+            });
+        });
+
+        const priorityBtns = document.querySelectorAll('.priority-btn');
+        const recommendationDetailsDiv = document.getElementById('recommendation-details');
+        const recommendationData = {
+            'ultimate_detail': `<h4 class="font-semibold text-lg mb-2 text-accent">For the Ultimate in Night Vision Detail (Front & Rear):</h4><p>Focus on models with Sony STARVIS 2 sensors for <strong>both</strong> front and rear cameras, plus robust HDR on both. 4K front / 2K+ rear is ideal. Look for brands known for strong image processing and high-quality optics.</p><p><strong>Example Considerations:</strong> Premium models from brands like Thinkware often lead in raw image quality due to such configurations. Scrutinize independent reviews focusing on night footage from both cameras.</p>`,
+            'cloud_features': `<h4 class="font-semibold text-lg mb-2 text-accent">For Balanced Performance with Leading Cloud Features & Connectivity:</h4><p>If remote access, instant notifications, and cloud backup are paramount (especially for security against theft/tampering).</p><p><strong>Example Contenders:</strong> BlackVue DR970X series (especially LTE models). Despite potential trade-offs like lacking HDR on some configurations, their STARVIS 2 front sensor and cloud integration offer a strong security package.</p>`,
+            'parking_surveillance': `<h4 class="font-semibold text-lg mb-2 text-accent">For Advanced Parking Surveillance with Excellent Night Vision:</h4><p>Look for radar-based motion detection, buffered recording, and energy-saving modes, all supported by strong night vision technology.</p><p><strong>Example Contenders:</strong> Thinkware U3000 (combines STARVIS 2 front sensor, Super Night Vision 4.0, and innovative radar parking mode).</p>`,
+            'budget_conscious': `<h4 class="font-semibold text-lg mb-2 text-accent">For Budget-Conscious Buyers Still Requiring Good Night Vision:</h4><p>Look for models with original Sony STARVIS sensors (or comparable), effective WDR or HDR, decent aperture, and positive user reviews on night performance. Prioritize models from reputable brands known for reliability even in their more affordable ranges.</p><p><strong>Example Contenders:</strong> Vantrue S1 Pro, or other well-reviewed models in the sub-$200 to sub-$300 categories that demonstrate competent low-light recording from established brands.</p>`
+        };
+        priorityBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                priorityBtns.forEach(el => el.classList.remove('selected'));
+                btn.classList.add('selected');
+                recommendationDetailsDiv.innerHTML = recommendationData[btn.dataset.priority] || "<p>Select a priority to see recommendations.</p>";
+            });
+        });
+
+    </script>
+</body>
+</html>
