@@ -527,105 +527,16 @@
                 if (!response.ok) {
                     const errorData = await response.json();
                     console.error("API Error:", errorData);
-                    throw new Error(`API request failed with status ${response.status}: ${errorData?.error?.message || response.statusText}`);
-                }
-
-                const result = await response.json();
-                
-                if (result.candidates && result.candidates.length > 0 &&
-                    result.candidates[0].content && result.candidates[0].content.parts &&
-                    result.candidates[0].content.parts.length > 0) {
-                    const text = result.candidates[0].content.parts[0].text;
-                    aiResponseDiv.innerHTML = `<p>${text.replace(/\n/g, '<br>')}</p>`;
-                } else {
-                    console.error("Unexpected API response structure:", result);
-                    aiResponseDiv.innerHTML = '<p class="text-red-500">Sorry, I could not get a response. The AI might be unavailable or the response was empty.</p>';
                 }
             } catch (error) {
-                console.error('Error calling Gemini API:', error);
-                aiResponseDiv.innerHTML = `<p class="text-red-500">An error occurred: ${error.message}. Please try again later.</p>`;
+                console.error("API Error:", error);
             } finally {
                 askAIButton.disabled = false;
             }
         });
-
-
-        const priceChartCtx = document.getElementById('priceComparisonChart').getContext('2d');
-        const priceData = {
-            labels: ['Thinkware U3000', 'BlackVue DR970X', 'Vantrue N4 Pro', 'Vantrue S1 Pro'],
-            datasets: [{
-                label: 'Typical Price Range (USD)',
-                data: [ [500, 550], [400, 541], [300, 400], [150, 200] ],
-                backgroundColor: [ 'rgba(13, 148, 136, 0.6)', 'rgba(15, 118, 110, 0.6)', 'rgba(17, 94, 89, 0.6)', 'rgba(19, 78, 74, 0.6)' ],
-                borderColor: [ 'rgb(13, 148, 136)', 'rgb(15, 118, 110)', 'rgb(17, 94, 89)', 'rgb(19, 78, 74)' ],
-                borderWidth: 1, barPercentage: 0.7, categoryPercentage: 0.8, borderSkipped: false,
-            }]
-        };
-        new Chart(priceChartCtx, {
-            type: 'bar', data: priceData,
-            options: {
-                indexAxis: 'y', responsive: true, maintainAspectRatio: false,
-                scales: { x: { beginAtZero: true, title: { display: true, text: 'Price (USD)' } },
-                    y: { ticks: { autoSkip: false, 
-                        callback: function(value) {
-                            const label = this.getLabelForValue(value);
-                            if (label.length > 20) { 
-                                const words = label.split(' '); let lines = ['']; let currentLine = 0;
-                                words.forEach(word => {
-                                    if ((lines[currentLine] + word).length > 16 && lines[currentLine] !== '') { currentLine++; lines[currentLine] = ''; }
-                                    lines[currentLine] += word + ' ';
-                                });
-                                return lines.map(line => line.trim());
-                            } return label;
-                        }
-                    }}
-                },
-                plugins: { legend: { display: false },
-                    tooltip: { callbacks: {
-                        label: function(context) {
-                            let label = context.dataset.label || ''; if (label) { label += ': '; }
-                            if (context.parsed.x !== null) {
-                                if (Array.isArray(context.raw) && context.raw.length === 2) { label += `$${context.raw[0]} - $${context.raw[1]}`; } 
-                                else { label += `$${context.parsed.x}`; }
-                            } return label;
-                        }
-                    }}
-                }
-            }
-        });
-        
-        const resFpsBtns = document.querySelectorAll('.res-fps-btn');
-        const resFpsInfoDiv = document.getElementById('res-fps-info');
-        const resFpsData = {
-            '4k30fps': "<strong>4K @ 30fps:</strong> Offers the highest detail for license plates. The 30fps allows more light capture per frame than 60fps, beneficial in dark conditions. Often optimal if sensor & ISP are high quality, prioritizing detail and light.",
-            '2k60fps': "<strong>2K @ 60fps:</strong> Balances smoother motion (better for fast-moving objects) with high detail. Best if motion is extreme and ambient light is adequate. However, less light per frame than 30fps is a concern in very dark scenes.",
-            '2k30fps': "<strong>2K @ 30fps:</strong> A good balance if 4K isn't available or if the 4K system struggles in low light. Offers good detail with better light capture per frame than 60fps.",
-            '1080p60fps': "<strong>1080p @ 60fps:</strong> Provides smoother motion but offers significantly less detail for license plates compared to 2K/4K. Also captures less light per frame than 30fps, which can be detrimental at night."
-        };
-        resFpsBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                resFpsBtns.forEach(b => b.classList.remove('bg-teal-500', 'ring-2', 'ring-teal-700'));
-                btn.classList.add('bg-teal-500', 'ring-2', 'ring-teal-700');
-                resFpsInfoDiv.innerHTML = resFpsData[btn.dataset.info] || "<p>Select an option to learn more.</p>";
-            });
-        });
-
-        const priorityBtns = document.querySelectorAll('.priority-btn');
-        const recommendationDetailsDiv = document.getElementById('recommendation-details');
-        const recommendationData = {
-            'ultimate_detail': `<h4 class="font-semibold text-lg mb-2 text-accent">For the Ultimate in Night Vision Detail (Front & Rear):</h4><p>Focus on models with Sony STARVIS 2 sensors for <strong>both</strong> front and rear cameras, plus robust HDR on both. 4K front / 2K+ rear is ideal. Look for brands known for strong image processing and high-quality optics.</p><p><strong>Example Considerations:</strong> Premium models from brands like Thinkware often lead in raw image quality due to such configurations. Scrutinize independent reviews focusing on night footage from both cameras.</p>`,
-            'cloud_features': `<h4 class="font-semibold text-lg mb-2 text-accent">For Balanced Performance with Leading Cloud Features & Connectivity:</h4><p>If remote access, instant notifications, and cloud backup are paramount (especially for security against theft/tampering).</p><p><strong>Example Contenders:</strong> BlackVue DR970X series (especially LTE models). Despite potential trade-offs like lacking HDR on some configurations, their STARVIS 2 front sensor and cloud integration offer a strong security package.</p>`,
-            'parking_surveillance': `<h4 class="font-semibold text-lg mb-2 text-accent">For Advanced Parking Surveillance with Excellent Night Vision:</h4><p>Look for radar-based motion detection, buffered recording, and energy-saving modes, all supported by strong night vision technology.</p><p><strong>Example Contenders:</strong> Thinkware U3000 (combines STARVIS 2 front sensor, Super Night Vision 4.0, and innovative radar parking mode).</p>`,
-            'budget_conscious': `<h4 class="font-semibold text-lg mb-2 text-accent">For Budget-Conscious Buyers Still Requiring Good Night Vision:</h4><p>Look for models with original Sony STARVIS sensors (or comparable), effective WDR or HDR, decent aperture, and positive user reviews on night performance. Prioritize models from reputable brands known for reliability even in their more affordable ranges.</p><p><strong>Example Contenders:</strong> Vantrue S1 Pro, or other well-reviewed models in the sub-$200 to sub-$300 categories that demonstrate competent low-light recording from established brands.</p>`
-        };
-        priorityBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                priorityBtns.forEach(el => el.classList.remove('selected'));
-                btn.classList.add('selected');
-                recommendationDetailsDiv.innerHTML = recommendationData[btn.dataset.priority] || "<p>Select a priority to see recommendations.</p>";
-            });
-        });
-
     </script>
+    
+    <!-- Modular JavaScript -->
+    <script type="module" src="js/app.js"></script>
 </body>
 </html>
